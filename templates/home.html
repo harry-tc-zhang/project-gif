@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>GIFTube</title>
+</head>
+<body>
+
+<div class="container" id="main-container" style='margin-top:20px'>
+    <div class="row">
+      <div class="col-sm-12" style="text-align:center">
+        Search for a video, input begin time, duration and caption, play back the segment and make a GIF.
+      </div>
+    </div>
+
+    <div class="row" id="search-row">
+        <div class="col-sm-12">
+            <div class="input-group">
+                <input id='search-input' type="text" class="form-control" placeholder="What do you want to immortalize today?" />
+                <div class="input-group-append">
+                    <button id='search-button' class="btn btn-outline-secondary" type="button">Search</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-top:20px">
+        <div class="col-md-8">
+          <div class="row">
+            <div class="col-sm-12" style="padding:10px">
+              <div id='youtube-player-wrapper' style='width:100%;display:none'>
+                  <div id="youtube-player"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="control-group" style="display:none">
+            <div class="col-sm-12">
+              <div class="input-group">
+                  <div class="input-group-preppend">
+                      <span class='input-group-text'>Start at</span>
+                  </div>
+                  <input id='start-input' type="text" class="form-control" value=0 />
+              </div>
+              <div class="input-group">
+                  <div class="input-group-prepend">
+                      <span class='input-group-text'>Duration</span>
+                  </div>
+                  <input id='duration-input' type="text" class="form-control" value=1 />
+              </div>
+              <div class="input-group">
+                  <div class="input-group-prepend">
+                      <span class='input-group-text'>Caption</span>
+                  </div>
+                  <input id='caption-input' type="text" class="form-control" value='' />
+              </div>
+              <button class="btn btn-primary" id="play-btn">Play</button>
+              <button class="btn btn-primary" id="gif-btn">Make GIF</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div id="search-results" style="height:200px; overflow-y:scroll">
+          </div>
+        </div>
+        </div>
+    </div>
+</div>
+
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.11/handlebars.min.js"></script>
+
+{% raw %}
+<script id="search-result-template" type="text/x-handlebars-template">
+{{#each items}}
+<div class="card youtube-card" videoId={{id.videoId}} style="margin-bottom:10px">
+    <img class="card-img-top" src={{snippet.thumbnails.medium.url}}></img>
+    <div class="card-body">
+        <h6 class="card-title">{{snippet.title}}</h6>
+    </div>
+</div>
+{{/each}}
+</script>
+{% endraw %}
+
+<script>
+var searchResultTemplate = undefined;
+var api_key = '{{ ctx.api_key }}';
+
+{% raw %}
+// Load and set up YouTube iFrame Player API
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+var youtubePlayer = undefined;
+function onYouTubeIframeAPIReady() {
+    var wrapperWidth = $('#youtube-player-wrapper').width() - 20;
+    var wrapperHeight = wrapperWidth / 16.0 * 9.0;
+    youtubePlayer = new YT.Player('youtube-player', {
+        width: wrapperWidth,
+        height: wrapperHeight
+    });
+}
+
+var currentVideoId = '';
+
+var searchAction = () => {
+    gapi.client.youtube.search.list({
+        'part': 'snippet',
+        'maxResults': 25,
+        'q': $('#search-input').val().toLowerCase(),
+        'safesearch': 'none',
+        'type': 'video'
+    }).then((response) => {
+        //console.log(response);
+        $('#search-results').html(searchResultTemplate(response.result));
+
+        $('#youtube-player-wrapper').show();
+        youtubePlayer.loadVideoById({
+            'videoId': response.result.items[0].id.videoId,
+            'suggestedQuality': 'large',
+            'endSeconds': 0
+        });
+        currentVideoId = response.result.items[0].id.videoId;
+        youtubePlayer.stopVideo();
+
+        $('#control-group').show();
+
+        $('.youtube-card').click((event) => {
+            console.log($(event.currentTarget).attr('videoId'));
+            currentVideoId = $(event.currentTarget).attr('videoId');
+            youtubePlayer.loadVideoById({
+                'videoId': $(event.currentTarget).attr('videoId'),
+                'suggestedQuality': 'large',
+                'endSeconds': 0
+            });
+            youtubePlayer.stopVideo();
+        });
+    });
+};
+
+var APILoaded = () => {
+    gapi.client.init({
+        'apiKey': api_key,
+        'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
+    }).then(() => {
+        $('#search-button').click(searchAction);
+    });
+}
+
+$(document).ready(function() {
+    searchResultTemplate = Handlebars.compile($('#search-result-template').html());
+    gapi.load('client', APILoaded);
+
+    $('#search-results').height($(window).height() - $('#search-row').height() - parseInt($('#main-container').css('margin-top')));
+
+    $('#play-btn').click(function() {
+      youtubePlayer.seekTo(parseFloat($('#start-input').val()));
+      youtubePlayer.playVideo();
+      setTimeout(() => {youtubePlayer.pauseVideo()}, parseFloat($('#duration-input').val()) * 1000);
+    });
+
+    $('#gif-btn').click(function() {
+      $.ajax({
+        method: 'POST',
+        url: '/makegif',
+        data: {
+          "videoId": currentVideoId,
+          "start": parseFloat($('#start-input').val()),
+          "duration": parseFloat($('#duration-input').val()),
+          "caption": $('#caption-input').val()
+        },
+        success: (response) => {
+          console.log(response);
+          if(response != "Doesn't look like anything to me.") {
+            var gifurl = '/downloadgif/' + response;
+            var linktag = document.createElement('a');
+            linktag.setAttribute('href', gifurl);
+            linktag.setAttribute('download', response);
+            console.log(linktag);
+            linktag.click();
+          }
+        }
+      })
+    })
+});
+{% endraw %}
+</script>
+</body>
+</html>
