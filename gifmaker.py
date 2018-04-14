@@ -67,7 +67,7 @@ def create_gif_from_youtube(videoid, start, duration, caption, font, color):
     final_gif_path = os.path.join(GIF_DIRNAME, final_gif_name)
     make_captioned_gif(init_gif_path, final_gif_path, fps, caption, font, color)
 
-    return final_gif_namew
+    return final_gif_name
 
 if __name__ == '__main__':
     fontpath = 'Futura.ttc'
