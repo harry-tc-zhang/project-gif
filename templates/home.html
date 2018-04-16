@@ -6,23 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
     <title>GIFTube</title>
 </head>
 <body>
 
 <div class="container" id="main-container" style='margin-top:20px'>
-    <div class="row">
-      <div class="col-sm-12" style="text-align:center">
-        Search for a video, input begin time, duration and caption, play back the segment and make a GIF.
-      </div>
-    </div>
-
     <div class="row" id="search-row">
         <div class="col-sm-12">
             <div class="input-group">
-                <input id='search-input' type="text" class="form-control" placeholder="What do you want to immortalize today?" />
+                <input id='search-input' type="text" class="form-control"
+                       placeholder="What do you want to immortalize today?" />
                 <div class="input-group-append">
                     <button id='search-button' class="btn btn-outline-secondary" type="button">Search</button>
                 </div>
@@ -32,64 +28,89 @@
 
     <div class="row" style="margin-top:20px">
         <div class="col-md-8">
-          <div class="row">
-            <div class="col-sm-12" style="padding:10px">
-              <div id='youtube-player-wrapper' style='width:100%;display:none'>
-                  <div id="youtube-player"></div>
-              </div>
+            <div class="row">
+                <div class="col-sm-12" style="padding:10px">
+                    <div id='youtube-player-wrapper' style='width:100%;display:none'>
+                        <div id="youtube-player"></div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="row" id="control-group" style="display:none">
-            <div class="col-sm-12">
-              <div class="input-group">
-                  <div class="input-group-preppend">
-                      <span class='input-group-text'>Start at</span>
-                  </div>
-                  <input id='start-input' type="text" class="form-control" value=0 />
-              </div>
-              <div class="input-group">
-                  <div class="input-group-prepend">
-                      <span class='input-group-text'>Duration</span>
-                  </div>
-                  <input id='duration-input' type="text" class="form-control" value=1 />
-              </div>
-              <div class="input-group">
-                  <div class="input-group-prepend">
-                      <span class='input-group-text'>Caption</span>
-                  </div>
-                  <input id='caption-input' type="text" class="form-control" value='' />
-              </div>
-              <button class="btn btn-primary" id="play-btn">Play</button>
-              <button class="btn btn-primary" id="gif-btn">Make GIF</button>
+            <div class="row" id="control-group" style="display:none">
+                <div class="col-sm-12">
+                    <div class="row">
+                        <div class="col-sm-10">
+                            <input type="range" min="0" max="100" value="0" style="width:100%" id="video-slider"/>
+                        </div>
+                        <div class="col-sm-2">
+                            <input type="text" class="form-control" value="0s" id="video-slider-display" disabled />
+                        </div>
+                    </div>
+                    <div style="width:100%">
+                        <div class="form-group">
+                            <label for="video-duration">Duration</label>
+                            <div class="input-group">
+                                <input class="form-control" id="video-duration" type="text" value="2" />
+                                <div class="input-group-append">
+                                    <button id="duration-minus" class="btn btn-outline-secondary" type="button">-</button>
+                                    <button id="duration-plus" class="btn btn-outline-secondary" type="button">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group-preppend">
+                            <span class='input-group-text'>Start at</span>
+                        </div>
+                        <input id='start-input' type="text" class="form-control" value=0 />
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class='input-group-text'>Duration</span>
+                        </div>
+                        <input id='duration-input' type="text" class="form-control" value=1 />
+                    </div>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class='input-group-text'>Caption</span>
+                        </div>
+                        <input id='caption-input' type="text" class="form-control" value='' />
+                    </div>
+                    <button class="btn btn-primary" id="play-btn">Play</button>
+                    <button class="btn btn-primary" id="gif-btn">Make GIF</button>
+                </div>
             </div>
-          </div>
         </div>
         <div class="col-md-4">
-          <div id="search-results" style="height:200px; overflow-y:scroll">
-          </div>
-        </div>
+            <div id="search-results" style="height:200px; overflow-y:scroll">
+            </div>
         </div>
     </div>
+</div>
 </div>
 
 <!-- Optional JavaScript -->
 <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.11/handlebars.min.js"></script>
 
 {% raw %}
 <script id="search-result-template" type="text/x-handlebars-template">
-{{#each items}}
-<div class="card youtube-card" videoId={{id.videoId}} style="margin-bottom:10px">
-    <img class="card-img-top" src={{snippet.thumbnails.medium.url}}></img>
-    <div class="card-body">
-        <h6 class="card-title">{{snippet.title}}</h6>
+    {{#each items}}
+    <div class="card youtube-card" videoId={{id.videoId}} style="margin-bottom:10px">
+        <img class="card-img-top" src={{snippet.thumbnails.medium.url}}></img>
+        <div class="card-body">
+            <h6 class="card-title">{{snippet.title}}</h6>
+        </div>
     </div>
-</div>
-{{/each}}
+    {{/each}}
 </script>
 {% endraw %}
 
@@ -105,14 +126,27 @@ var firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 var playSecs = 0;
+var snippetPlaying = false;
+var updateMaxSecs = false;
 
 var youtubePlayer = undefined;
+
+var savedSnippets = [];
+var currentStart = 0;
+
 function onPlayerStateChange(event) {
     console.log(event);
-    if(event.data == 1) {
-        setTimeout(() => {
-            youtubePlayer.pauseVideo();
-        }, playSecs * 1000);
+    if (event.data == 1) {
+        if (updateMaxSecs) {
+            console.log(youtubePlayer.getDuration());
+            $("#video-slider").attr('max', parseInt(youtubePlayer.getDuration()));
+        }
+        if (snippetPlaying) {
+            setTimeout(() => {
+                youtubePlayer.pauseVideo();
+            }, playSecs * 1000);
+            snippetPlaying = false;
+        }
     }
 }
 
@@ -123,12 +157,26 @@ function onYouTubeIframeAPIReady() {
         width: wrapperWidth,
         height: wrapperHeight,
         events: {
+            onReady: () => {youtubePlayer.mute();},
             onStateChange: onPlayerStateChange
         }
     });
 }
 
 var currentVideoId = '';
+
+var loadVideo = (videoId) => {
+    youtubePlayer.loadVideoById({
+        'videoId': videoId,
+        'suggestedQuality': 'large',
+        'endSeconds': 0
+    });
+    updateMaxSecs = true;
+    youtubePlayer.playVideo();
+    setTimeout(() => {
+        youtubePlayer.stopVideo();
+    }, 1000);
+}
 
 var searchAction = () => {
     gapi.client.youtube.search.list({
@@ -143,6 +191,7 @@ var searchAction = () => {
 
         youtubePlayer.mute();
         $('#youtube-player-wrapper').show();
+        /*
         youtubePlayer.loadVideoById({
             'videoId': response.result.items[0].id.videoId,
             'suggestedQuality': 'large',
@@ -150,67 +199,130 @@ var searchAction = () => {
         });
         currentVideoId = response.result.items[0].id.videoId;
         youtubePlayer.stopVideo();
+        */
+        loadVideo(response.result.items[0].id.videoId);
 
         $('#control-group').show();
 
         $('.youtube-card').click((event) => {
-            console.log($(event.currentTarget).attr('videoId'));
+            //console.log($(event.currentTarget).attr('videoId'));
             currentVideoId = $(event.currentTarget).attr('videoId');
+            loadVideo(currentVideoId);
+            /*
             youtubePlayer.loadVideoById({
                 'videoId': $(event.currentTarget).attr('videoId'),
                 'suggestedQuality': 'large',
                 'endSeconds': 0
             });
-            youtubePlayer.stopVideo();
+            youtubePlayer.playVideo();
+            //videoInfoAction();
+            setTimeout(() => {youtubePlayer.stopVideo();}, 1000);
+            */
         });
     });
 };
+
+var playVideoSegment = (videoId, start, duration) => {
+    if(videoId != currentVideoId) {
+        loadVideo(videoId);
+    }
+    youtubePlayer.seekTo(start);
+    snippetPlaying = true;
+    playSecs = duration;
+    youtubePlayer.playVideo();
+}
+
+var videoInfoAction = () => {
+    gapi.client.youtube.videos.list({
+        'part': 'contentDetails',
+        'id': currentVideoId
+    }).then((response) => {
+        console.log(response);
+    })
+}
 
 var APILoaded = () => {
     gapi.client.init({
         'apiKey': api_key,
         'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
     }).then(() => {
-        $('#search-button').click(searchAction);
+        $('#search-button').
+        click(searchAction);
     });
-}
+};
 
-$(document).ready(function() {
+$(document).ready(function () {
     searchResultTemplate = Handlebars.compile($('#search-result-template').html());
     gapi.load('client', APILoaded);
 
     $('#search-results').height($(window).height() - $('#search-row').height() - parseInt($('#main-container').css('margin-top')));
 
-    $('#play-btn').click(function() {
-      youtubePlayer.seekTo(parseFloat($('#start-input').val()));
-      youtubePlayer.playVideo();
-      playSecs = parseFloat($('#duration-input').val());
-      //setTimeout(() => {youtubePlayer.pauseVideo()}, parseFloat($('#duration-input').val()) * 1000);
+    $('#play-btn').click(function () {
+        youtubePlayer.seekTo(parseFloat($('#start-input').val()));
+        youtubePlayer.playVideo();
+        playSecs = parseFloat($('#duration-input').val());
+        snippetPlaying = true;
+        //setTimeout(() => {youtubePlayer.pauseVideo()}, parseFloat($('#duration-input').val()) * 1000);
     });
 
-    $('#gif-btn').click(function() {
-      $.ajax({
-        method: 'POST',
-        url: '/makegif',
-        data: {
-          "videoId": currentVideoId,
-          "start": parseFloat($('#start-input').val()),
-          "duration": parseFloat($('#duration-input').val()),
-          "caption": $('#caption-input').val()
-        },
-        success: (response) => {
-          console.log(response);
-          if(response != "Doesn't look like anything to me.") {
-            var gifurl = '/downloadgif/' + response;
-            var linktag = document.createElement('a');
-            linktag.setAttribute('href', gifurl);
-            linktag.setAttribute('download', response);
-            console.log(linktag);
-            linktag.click();
-          }
+    $('#gif-btn').click(() => {
+        $.ajax({
+            method: 'POST',
+            url: '/makegif',
+            data: {
+                "videoId": currentVideoId,
+                "start": parseFloat($('#start-input').val()),
+                "duration": parseFloat($('#duration-input').val()),
+                "caption": $('#caption-input').val()
+            },
+            success: (response) => {
+                console.log(response);
+                if (response != "Doesn't look like anything to me.") {
+                    var gifurl = '/downloadgif/' + response;
+                    var linktag = document.createElement('a');
+                    linktag.setAttribute('href', gifurl);
+                    linktag.setAttribute('download', response);
+                    console.log(linktag);
+                    linktag.click();
+                }
+            }
+        });
+    });
+
+    $('#video-slider').change(() => {
+        console.log($('#video-slider').val());
+        currentStart = parseFloat($('#video-slider').val());
+        var currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentStart, currentDuration);
+    });
+
+    $('#video-slider').on('input', () => {
+       $('#video-slider-display').val($('#video-slider').val() + 's');
+    });
+
+    $('#duration-plus').click(() => {
+        var currentVal = parseFloat($('#video-duration').val());
+        $('#video-duration').val(currentVal + 1);
+        currentStart = parseFloat($('#video-slider').val());
+        var currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentStart, currentDuration);
+    });
+
+    $('#duration-minus').click(() => {
+        var currentVal = parseFloat($('#video-duration').val());
+        if(currentVal > 0) {
+            $('#video-duration').val(currentVal - 1);
         }
-      })
-    })
+        currentStart = parseFloat($('#video-slider').val());
+        var currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentStart, currentDuration);
+    });
+
+    $('#video-duration').change(() => {
+        currentStart = parseFloat($('#video-slider').val());
+        var currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentStart, currentDuration);
+    });
 });
 {% endraw %}
 </script>
