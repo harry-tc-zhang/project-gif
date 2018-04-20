@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
           integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
+    <!-- Open Iconic icons -->
+    <link rel="stylesheet" href="static/open-iconic/css/open-iconic-bootstrap.min.css" />
+
     <title>GIFTube</title>
 </head>
 <body>
@@ -37,7 +40,7 @@
             </div>
             <div class="row" id="control-group" style="display:none">
                 <div class="col-sm-12">
-                    <div class="row">
+                    <div class="row" style="margin-bottom:15px">
                         <div class="col-sm-10">
                             <input type="range" min="0" max="100" value="0" style="width:100%" id="video-slider"/>
                         </div>
@@ -45,38 +48,47 @@
                             <input type="text" class="form-control" value="0s" id="video-slider-display" disabled />
                         </div>
                     </div>
-                    <div style="width:100%">
-                        <div class="form-group">
-                            <label for="video-duration">Duration</label>
-                            <div class="input-group">
-                                <input class="form-control" id="video-duration" type="text" value="2" />
-                                <div class="input-group-append">
-                                    <button id="duration-minus" class="btn btn-outline-secondary" type="button">-</button>
-                                    <button id="duration-plus" class="btn btn-outline-secondary" type="button">+</button>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <span class="input-group-text">Duration</span>
+                                    </div>
+                                    <input class="form-control" id="video-duration" type="text" value="2" />
+                                    <div class="input-group-append">
+                                        <button id="duration-minus" class="btn btn-outline-secondary" type="button" style="width:40px">-</button>
+                                        <button id="duration-plus" class="btn btn-outline-secondary" type="button" style="width:40px">+</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="input-group">
-                        <div class="input-group-preppend">
-                            <span class='input-group-text'>Start at</span>
+                    <div class="row"">
+                        <div class="col-sm-12">
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class='input-group-text'>Caption</span>
+                                </div>
+                                <input id='caption-input' type="text" class="form-control" value='' />
+                            </div>
                         </div>
-                        <input id='start-input' type="text" class="form-control" value=0 />
                     </div>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class='input-group-text'>Duration</span>
+                    <div class="row" style="margin-top:15px">
+                        <div class="col-sm-4 d-flex justify-content-center">
+                            <button class="btn btn-primary" id="play-btn">Play</button>
                         </div>
-                        <input id='duration-input' type="text" class="form-control" value=1 />
-                    </div>
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class='input-group-text'>Caption</span>
+                        <div class="col-sm-4 d-flex justify-content-center">
+                            <button class="btn btn-primary" id="bookmark-btn">Bookmark</button>
                         </div>
-                        <input id='caption-input' type="text" class="form-control" value='' />
+                        <div class="col-sm-4 d-flex justify-content-center">
+                            <button class="btn btn-primary" id="gif-btn">Make GIF</button>
+                        </div>
                     </div>
-                    <button class="btn btn-primary" id="play-btn">Play</button>
-                    <button class="btn btn-primary" id="gif-btn">Make GIF</button>
+                    <div class="row" style="margin-top:15px">
+                        <div class="col-sm-12" id="bookmark-section" style="overflow-y:scroll">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -86,6 +98,20 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="progress-modal">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Generating your GIF...</h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width:100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Optional JavaScript -->
@@ -104,7 +130,7 @@
 {% raw %}
 <script id="search-result-template" type="text/x-handlebars-template">
     {{#each items}}
-    <div class="card youtube-card" videoId={{id.videoId}} style="margin-bottom:10px">
+    <div class="card youtube-card" videoId="{{id.videoId}}" videoTitle="{{snippet.title}}" style="margin-bottom:10px">
         <img class="card-img-top" src={{snippet.thumbnails.medium.url}}></img>
         <div class="card-body">
             <h6 class="card-title">{{snippet.title}}</h6>
@@ -112,13 +138,35 @@
     </div>
     {{/each}}
 </script>
+
+<script id="bookmark-table-template" type="text/x-handlebars-template">
+<table class="table">
+    <tr>
+        <th>Title</th>
+        <th>Start</th>
+        <th>Duration</th>
+        <th></th>
+    </tr>
+    {{#each this}}
+    <tr>
+        <td>{{title}}</td>
+        <td>{{start}}s</td>
+        <td>{{duration}}s</td>
+        <td><a class="bookmark-play" href="#" forItemIdx="{{@index}}"><span class="oi oi-media-play" title="media-play" aria-hidden="true"></span></a></td>
+    </tr>
+    {{/each}}
+</table>
+</script>
 {% endraw %}
 
 <script>
-var searchResultTemplate = undefined;
+// API key from backend
 var api_key = '{{ ctx.api_key }}';
 
 {% raw %}
+var searchResultTemplate = undefined;
+var bookmarkTableTemplate = undefined;
+
 // Load and set up YouTube iFrame Player API
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
@@ -133,6 +181,12 @@ var youtubePlayer = undefined;
 
 var savedSnippets = [];
 var currentStart = 0;
+var currentDuration = 2;
+
+var updateSliderVal = (val) => {
+    $('#video-slider').val(currentStart);
+    $('#video-slider-display').val(val + 's');
+}
 
 function onPlayerStateChange(event) {
     console.log(event);
@@ -140,6 +194,8 @@ function onPlayerStateChange(event) {
         if (updateMaxSecs) {
             console.log(youtubePlayer.getDuration());
             $("#video-slider").attr('max', parseInt(youtubePlayer.getDuration()));
+            updateSliderVal(currentStart);
+            $('#video-duration').val(currentDuration);
         }
         if (snippetPlaying) {
             setTimeout(() => {
@@ -164,18 +220,40 @@ function onYouTubeIframeAPIReady() {
 }
 
 var currentVideoId = '';
+var currentVideoTitle = '';
 
-var loadVideo = (videoId) => {
+var loadVideo = (videoId, videoTitle, cb=undefined) => {
     youtubePlayer.loadVideoById({
         'videoId': videoId,
         'suggestedQuality': 'large',
         'endSeconds': 0
     });
+    currentVideoId = videoId;
+    currentVideoTitle = videoTitle;
+    currentStart = 0;
     updateMaxSecs = true;
     youtubePlayer.playVideo();
     setTimeout(() => {
         youtubePlayer.stopVideo();
+        if(cb) {
+            cb();
+        }
     }, 1000);
+}
+
+var playSavedSnippet = (snippet) => {
+    youtubePlayer.loadVideoById({
+        'videoId': snippet.videoId,
+        'suggestedQuality': 'large',
+        'endSeconds': 0
+    });
+    updateMaxSecs = true;
+    snippetPlaying = true;
+    currentVideoId = snippet.videoId;
+    currentStart = snippet.start;
+    currentDuration = snippet.duration;
+    $('#caption-input').val(snippet.caption);
+    playVideoSegment(snippet.videoId, snippet.title, snippet.start, snippet.duration);
 }
 
 var searchAction = () => {
@@ -186,50 +264,43 @@ var searchAction = () => {
         'safesearch': 'none',
         'type': 'video'
     }).then((response) => {
-        //console.log(response);
         $('#search-results').html(searchResultTemplate(response.result));
 
         youtubePlayer.mute();
         $('#youtube-player-wrapper').show();
-        /*
-        youtubePlayer.loadVideoById({
-            'videoId': response.result.items[0].id.videoId,
-            'suggestedQuality': 'large',
-            'endSeconds': 0
-        });
-        currentVideoId = response.result.items[0].id.videoId;
-        youtubePlayer.stopVideo();
-        */
-        loadVideo(response.result.items[0].id.videoId);
+        loadVideo(response.result.items[0].id.videoId, response.result.items[0].snippet.title);
 
         $('#control-group').show();
 
         $('.youtube-card').click((event) => {
             //console.log($(event.currentTarget).attr('videoId'));
-            currentVideoId = $(event.currentTarget).attr('videoId');
-            loadVideo(currentVideoId);
-            /*
-            youtubePlayer.loadVideoById({
-                'videoId': $(event.currentTarget).attr('videoId'),
-                'suggestedQuality': 'large',
-                'endSeconds': 0
-            });
-            youtubePlayer.playVideo();
-            //videoInfoAction();
-            setTimeout(() => {youtubePlayer.stopVideo();}, 1000);
-            */
+            loadVideo($(event.currentTarget).attr('videoId'), $(event.currentTarget).attr('videoTitle'));
         });
+
+        var bookmarkTopOffet = $('#bookmark-section')[0].getBoundingClientRect().top;
+        console.log(bookmarkTopOffet);
+        $('#bookmark-section').height($(window).height() - bookmarkTopOffet);
+
+        var searchResultTopOffset = $('#search-results')[0].getBoundingClientRect().top;
+        $('#search-results').height($(window).height() - searchResultTopOffset);
     });
 };
 
-var playVideoSegment = (videoId, start, duration) => {
+var playVideoSegment = (videoId, videoTitle, start, duration) => {
     if(videoId != currentVideoId) {
-        loadVideo(videoId);
+        loadVideo(videoId, videoTitle, () => {
+            console.log('here is the callback ' + start + ' ' + duration);
+            youtubePlayer.seekTo(start);
+            snippetPlaying = true;
+            playSecs = duration;
+            youtubePlayer.playVideo();
+        });
+    } else {
+        youtubePlayer.seekTo(start);
+        snippetPlaying = true;
+        playSecs = duration;
+        youtubePlayer.playVideo();
     }
-    youtubePlayer.seekTo(start);
-    snippetPlaying = true;
-    playSecs = duration;
-    youtubePlayer.playVideo();
 }
 
 var videoInfoAction = () => {
@@ -246,33 +317,40 @@ var APILoaded = () => {
         'apiKey': api_key,
         'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"],
     }).then(() => {
-        $('#search-button').
-        click(searchAction);
+        $('#search-button').click(searchAction);
+    });
+};
+
+var saveSnippet = (snippetInfo) => {
+    savedSnippets.push(snippetInfo);
+    $('#bookmark-section').html(bookmarkTableTemplate(savedSnippets))
+    $('a.bookmark-play').click((event) => {
+        var idx = parseInt($(event.target).parent().attr('forItemIdx'));
+        playSavedSnippet(savedSnippets[idx]);
     });
 };
 
 $(document).ready(function () {
     searchResultTemplate = Handlebars.compile($('#search-result-template').html());
+    bookmarkTableTemplate = Handlebars.compile($('#bookmark-table-template').html());
+
     gapi.load('client', APILoaded);
 
-    $('#search-results').height($(window).height() - $('#search-row').height() - parseInt($('#main-container').css('margin-top')));
-
     $('#play-btn').click(function () {
-        youtubePlayer.seekTo(parseFloat($('#start-input').val()));
-        youtubePlayer.playVideo();
-        playSecs = parseFloat($('#duration-input').val());
-        snippetPlaying = true;
-        //setTimeout(() => {youtubePlayer.pauseVideo()}, parseFloat($('#duration-input').val()) * 1000);
+        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
     });
 
+    $('#progress-modal').modal('hide');
+
     $('#gif-btn').click(() => {
+        $('#progress-modal').modal('show');
         $.ajax({
             method: 'POST',
             url: '/makegif',
             data: {
                 "videoId": currentVideoId,
-                "start": parseFloat($('#start-input').val()),
-                "duration": parseFloat($('#duration-input').val()),
+                "start": currentStart,
+                "duration": currentDuration,
                 "caption": $('#caption-input').val()
             },
             success: (response) => {
@@ -285,6 +363,7 @@ $(document).ready(function () {
                     console.log(linktag);
                     linktag.click();
                 }
+                $('#progress-modal').modal('hide');
             }
         });
     });
@@ -292,8 +371,8 @@ $(document).ready(function () {
     $('#video-slider').change(() => {
         console.log($('#video-slider').val());
         currentStart = parseFloat($('#video-slider').val());
-        var currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentStart, currentDuration);
+        currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
     });
 
     $('#video-slider').on('input', () => {
@@ -304,8 +383,8 @@ $(document).ready(function () {
         var currentVal = parseFloat($('#video-duration').val());
         $('#video-duration').val(currentVal + 1);
         currentStart = parseFloat($('#video-slider').val());
-        var currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentStart, currentDuration);
+        currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
     });
 
     $('#duration-minus').click(() => {
@@ -314,14 +393,24 @@ $(document).ready(function () {
             $('#video-duration').val(currentVal - 1);
         }
         currentStart = parseFloat($('#video-slider').val());
-        var currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentStart, currentDuration);
+        currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
     });
 
     $('#video-duration').change(() => {
         currentStart = parseFloat($('#video-slider').val());
-        var currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentStart, currentDuration);
+        currentDuration = parseFloat($('#video-duration').val());
+        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
+    });
+
+    $('#bookmark-btn').click(() => {
+        saveSnippet({
+            title: currentVideoTitle,
+            videoId: currentVideoId,
+            start: currentStart,
+            duration: currentDuration,
+            caption: $('#caption-input').val()
+        });
     });
 });
 {% endraw %}
