@@ -37,5 +37,10 @@ def downloadgif(gifname):
     return send_from_directory('gifs', gifname)
 
 
+@app.route('/static/<path:staticpath>', methods=['GET'])
+def send_static(staticpath):
+    return send_from_directory('static', staticpath)
+
+
 if __name__ == '__main__':
     app.run()
