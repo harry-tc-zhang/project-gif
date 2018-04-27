@@ -9,13 +9,21 @@ firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 var playSecs = 0;
 var snippetPlaying = false;
-var updateMaxSecs = false;
+var updateVideoMetadata = false;
 
 var youtubePlayer = undefined;
 
 var savedSnippets = [];
+
+var currentSecs = 0;
 var currentStart = 0;
-var currentDuration = 2;
+var currentDuration = 3;
+var currentEnd = 0;
+var currentSpeed = 1;
+
+var currentPlayCallback = undefined;
+
+var INCREMENT_VAL = 0.2;
 
 var updateSliderVal = (val) => {
     $('#video-slider').val(currentStart);
@@ -25,20 +33,65 @@ var updateSliderVal = (val) => {
 function onPlayerStateChange(event) {
     console.log(event);
     if (event.data == 1) {
-        if (updateMaxSecs) {
+        if (updateVideoMetadata) {
             console.log(youtubePlayer.getDuration());
             $("#video-slider").attr('max', parseInt(youtubePlayer.getDuration()));
             updateSliderVal(currentStart);
-            $('#video-duration').val(currentDuration);
+            setTimeout(() => {
+                youtubePlayer.stopVideo();
+                console.log(youtubePlayer.getAvailablePlaybackRates());
+                updateVideoMetadata = false;
+                // Sets the playback rate dropdown
+                let rates = youtubePlayer.getAvailablePlaybackRates();
+                $('#video-speed').html(rates.map((r) =>
+                    ("<option value='" + r.toString() + "' " + ((r == 1) ? "selected" : "") + ">"
+                        + r.toString() + "x"
+                        + "</option>")
+                ));
+                if(currentPlayCallback) {
+                    currentPlayCallback();
+                    currentPlayCallback = undefined;
+                }
+            }, 1000);
         }
         if (snippetPlaying) {
             setTimeout(() => {
                 youtubePlayer.pauseVideo();
-            }, playSecs * 1000);
-            snippetPlaying = false;
+                currentSpeed = 1;
+                snippetPlaying = false;
+            }, playSecs / currentSpeed * 1000);
         }
+    } else if(event.data == 2) {
+        console.log(youtubePlayer.getCurrentTime());
     }
 }
+
+var updateTimeInputs = (start, end, speed) => {
+    currentDuration = end - start;
+    $('#video-start').val(start.toFixed(2).toString() + "s");
+    $('#video-duration').val((end - start).toFixed(2).toString() + "s");
+    $('#video-end').val(end.toFixed(2).toString() + "s");
+    $('#video-speed').val(speed);
+    playVideoSegment(currentVideoId, currentVideoTitle, start, end - start, speed);
+}
+
+var pollCurrentTime = () => {
+    if(youtubePlayer.getPlayerState() == 1) {
+        currentSecs = youtubePlayer.getCurrentTime();
+        if(!snippetPlaying) {
+            if(currentSecs > currentDuration) {
+                currentStart = currentSecs - currentDuration;
+            } else {
+                currentStart = 0;
+            }
+            currentEnd = currentSecs;
+            $('#video-start').val(currentStart.toFixed(2).toString() + "s");
+            $('#video-duration').val(currentDuration.toFixed(2).toString() + "s");
+            $('#video-end').val(currentEnd.toFixed(2).toString() + "s");
+        }
+    }
+    setTimeout(() => {pollCurrentTime();}, 200);
+};
 
 function onYouTubeIframeAPIReady() {
     var wrapperWidth = $('#youtube-player-wrapper').width() - 20;
@@ -47,11 +100,14 @@ function onYouTubeIframeAPIReady() {
         width: wrapperWidth,
         height: wrapperHeight,
         events: {
-            onReady: () => {youtubePlayer.mute();},
+            onReady: () => {
+                youtubePlayer.mute();
+                pollCurrentTime();
+            },
             onStateChange: onPlayerStateChange
         },
         playerVars: {
-            controls: 0,
+            //controls: 0,
             disablekb: 1,
             cc_load_policy: 3,
             iv_load_policy: 3
@@ -71,14 +127,16 @@ var loadVideo = (videoId, videoTitle, cb=undefined) => {
     currentVideoId = videoId;
     currentVideoTitle = videoTitle;
     currentStart = 0;
-    updateMaxSecs = true;
-    youtubePlayer.playVideo();
+    updateVideoMetadata = true;
+    currentPlayCallback = cb;
+    /*
     setTimeout(() => {
         youtubePlayer.stopVideo();
+        console.log(youtubePlayer.getAvailablePlaybackRates());
         if(cb) {
             cb();
         }
-    }, 1000);
+    }, 1000);*/
 }
 
 var playSavedSnippet = (snippet) => {
@@ -87,8 +145,8 @@ var playSavedSnippet = (snippet) => {
         'suggestedQuality': 'large',
         'endSeconds': 0
     });
-    updateMaxSecs = true;
-    snippetPlaying = true;
+    //updateVideoMetadata = true;
+    //snippetPlaying = true;
     currentVideoId = snippet.videoId;
     currentStart = snippet.start;
     currentDuration = snippet.duration;
@@ -126,7 +184,7 @@ var searchAction = () => {
     });
 };
 
-var playVideoSegment = (videoId, videoTitle, start, duration) => {
+var playVideoSegment = (videoId, videoTitle, start, duration, speed) => {
     if(videoId != currentVideoId) {
         loadVideo(videoId, videoTitle, () => {
             console.log('here is the callback ' + start + ' ' + duration);
@@ -136,6 +194,7 @@ var playVideoSegment = (videoId, videoTitle, start, duration) => {
             youtubePlayer.playVideo();
         });
     } else {
+        youtubePlayer.setPlaybackRate(speed);
         youtubePlayer.seekTo(start);
         snippetPlaying = true;
         playSecs = duration;
@@ -232,52 +291,71 @@ $(document).ready(() => {
                 if (response != "Doesn't look like anything to me.") {
                     var gifurl = '/downloadgif/' + response;
                     showGIFPreview(gifurl);
-                    /*
-                    var linktag = document.createElement('a');
-                    linktag.setAttribute('href', gifurl);
-                    linktag.setAttribute('download', response);
-                    console.log(linktag);
-                    linktag.click();
-                    */
                 }
-                //$('#progress-modal').modal('hide');
             }
         });
     });
 
-    $('#video-slider').change(() => {
-        console.log($('#video-slider').val());
-        currentStart = parseFloat($('#video-slider').val());
+    $('#video-duration').change(() => {
+        //currentStart = parseFloat($('#video-slider').val());
         currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
-    });
-
-    $('#video-slider').on('input', () => {
-       $('#video-slider-display').val($('#video-slider').val() + 's');
+        updateTimeInputs(currentStart, currenStart + currentDuration, currentSpeed);
     });
 
     $('#duration-plus').click(() => {
         var currentVal = parseFloat($('#video-duration').val());
-        $('#video-duration').val(currentVal + 1);
-        currentStart = parseFloat($('#video-slider').val());
-        currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
+        currentDuration = currentVal + INCREMENT_VAL;
+        //currentStart = parseFloat($('#video-slider').val());
+        updateTimeInputs(currentStart, currentStart + currentDuration, currentSpeed);
     });
 
     $('#duration-minus').click(() => {
         var currentVal = parseFloat($('#video-duration').val());
-        if(currentVal > 0) {
-            $('#video-duration').val(currentVal - 1);
+        if(currentVal >= INCREMENT_VAL) {
+            currentDuration = currentVal - INCREMENT_VAL;
+        } else {
+            currentDuration = 0;
         }
-        currentStart = parseFloat($('#video-slider').val());
-        currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
+        updateTimeInputs(currentStart, currentStart + currentDuration, currentSpeed);
     });
 
-    $('#video-duration').change(() => {
-        currentStart = parseFloat($('#video-slider').val());
-        currentDuration = parseFloat($('#video-duration').val());
-        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
+    $('#video-start').change(() => {
+        currentStart = parseFloat($('#video-start').val());
+        updateTimeInputs(currentStart, currentEnd, currentSpeed);
+    });
+
+    $('#start-plus').click(() => {
+        var currentVal = parseFloat($('#video-start').val());
+        currentStart = currentVal + INCREMENT_VAL;
+        updateTimeInputs(currentStart, currentEnd, currentSpeed);
+    });
+
+    $('#start-minus').click(() => {
+        var currentVal = parseFloat($('#video-start').val());
+        currentStart = (currentVal >= INCREMENT_VAL) ? (currentVal - INCREMENT_VAL) : 0;
+        updateTimeInputs(currentStart, currentEnd, currentSpeed);
+    });
+
+    $('#video-end').change(() => {
+        currentEnd = parseFloat($('#video-end').val());
+        updateTimeInputs(currentStart, currentEnd, currentSpeed);
+    });
+
+    $('#end-plus').click(() => {
+        var currentVal = parseFloat($('#video-end').val());
+        currentEnd = currentVal + INCREMENT_VAL;
+        updateTimeInputs(currentStart, currentEnd, currentSpeed);
+    });
+
+    $('#end-minus').click(() => {
+        var currentVal = parseFloat($('#video-end').val());
+        currentEnd = (currentVal > (currentStart + INCREMENT_VAL)) ? (currentVal - INCREMENT_VAL) : currentStart;
+        updateTimeInputs(currentStart, currentEnd, currentSpeed);
+    });
+
+    $('#video-speed').change(() => {
+       currentSpeed = parseFloat($('#video-speed').val());
+       updateTimeInputs(currentStart, currentEnd, currentSpeed);
     });
 
     $('#bookmark-btn').click(() => {
@@ -286,6 +364,7 @@ $(document).ready(() => {
             videoId: currentVideoId,
             start: currentStart,
             duration: currentDuration,
+            speed: currentSpeed,
             caption: $('#caption-input').val()
         });
     });
@@ -295,5 +374,5 @@ $(document).ready(() => {
 
     $('#caption-input').keyup(() => {
         $('#caption-text').html($('#caption-input').val());
-    })
+    });
 });
