@@ -25,18 +25,10 @@ var currentPlayCallback = undefined;
 
 var INCREMENT_VAL = 0.2;
 
-var updateSliderVal = (val) => {
-    $('#video-slider').val(currentStart);
-    $('#video-slider-display').val(val + 's');
-}
-
 function onPlayerStateChange(event) {
-    console.log(event);
     if (event.data == 1) {
         if (updateVideoMetadata) {
             console.log(youtubePlayer.getDuration());
-            $("#video-slider").attr('max', parseInt(youtubePlayer.getDuration()));
-            updateSliderVal(currentStart);
             setTimeout(() => {
                 youtubePlayer.stopVideo();
                 console.log(youtubePlayer.getAvailablePlaybackRates());
@@ -54,12 +46,13 @@ function onPlayerStateChange(event) {
                 }
             }, 1000);
         }
-        if (snippetPlaying) {
+        else if (snippetPlaying) {
             setTimeout(() => {
                 youtubePlayer.pauseVideo();
-                currentSpeed = 1;
                 snippetPlaying = false;
             }, playSecs / currentSpeed * 1000);
+        } else {
+            youtubePlayer.setPlaybackRate(1);
         }
     } else if(event.data == 2) {
         console.log(youtubePlayer.getCurrentTime());
@@ -126,32 +119,19 @@ var loadVideo = (videoId, videoTitle, cb=undefined) => {
     });
     currentVideoId = videoId;
     currentVideoTitle = videoTitle;
-    currentStart = 0;
     updateVideoMetadata = true;
     currentPlayCallback = cb;
-    /*
-    setTimeout(() => {
-        youtubePlayer.stopVideo();
-        console.log(youtubePlayer.getAvailablePlaybackRates());
-        if(cb) {
-            cb();
-        }
-    }, 1000);*/
 }
 
 var playSavedSnippet = (snippet) => {
-    youtubePlayer.loadVideoById({
-        'videoId': snippet.videoId,
-        'suggestedQuality': 'large',
-        'endSeconds': 0
-    });
-    //updateVideoMetadata = true;
-    //snippetPlaying = true;
-    currentVideoId = snippet.videoId;
     currentStart = snippet.start;
     currentDuration = snippet.duration;
+    currentEnd = snippet.start + snippet.duration;
+    currentSpeed = snippet.speed;
+    updateTimeInputs(snippet.start, snippet.start + snippet.duration, snippet.speed);
     $('#caption-input').val(snippet.caption);
-    playVideoSegment(snippet.videoId, snippet.title, snippet.start, snippet.duration);
+    $('#caption-text').text(snippet.caption);
+    playVideoSegment(snippet.videoId, snippet.title, snippet.start, snippet.duration, snippet.speed);
 }
 
 var searchAction = () => {
@@ -172,6 +152,7 @@ var searchAction = () => {
 
         $('.youtube-card').click((event) => {
             //console.log($(event.currentTarget).attr('videoId'));
+            currentStart = 0;
             loadVideo($(event.currentTarget).attr('videoId'), $(event.currentTarget).attr('videoTitle'));
         });
 
@@ -188,10 +169,7 @@ var playVideoSegment = (videoId, videoTitle, start, duration, speed) => {
     if(videoId != currentVideoId) {
         loadVideo(videoId, videoTitle, () => {
             console.log('here is the callback ' + start + ' ' + duration);
-            youtubePlayer.seekTo(start);
-            snippetPlaying = true;
-            playSecs = duration;
-            youtubePlayer.playVideo();
+            playVideoSegment(videoId, videoTitle, start, duration, speed);
         });
     } else {
         youtubePlayer.setPlaybackRate(speed);
@@ -252,7 +230,7 @@ $(document).ready(() => {
     gapi.load('client', APILoaded);
 
     $('#play-btn').click(function () {
-        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration);
+        playVideoSegment(currentVideoId, currentVideoTitle, currentStart, currentDuration, parseFloat($('#video-speed').val()));
     });
 
     $('#progress-modal').modal('hide');
@@ -285,7 +263,8 @@ $(document).ready(() => {
                 "videoId": currentVideoId,
                 "start": currentStart,
                 "duration": currentDuration,
-                "caption": $('#caption-input').val()
+                "caption": $('#caption-input').val(),
+                "speed": parseFloat($('#video-speed').val()),
             },
             success: (response) => {
                 if (response != "Doesn't look like anything to me.") {

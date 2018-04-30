@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 
-font = ImageFont.truetype(os.path.join('fonts', 'Futura.ttc'), 24)
+font = ImageFont.truetype(os.path.join('fonts', 'Impact.ttf'), 24)
 color = (255, 255, 255)
 
 
@@ -24,8 +24,10 @@ def makegif():
         video_id = request.form['videoId']
         start = float(request.form['start'])
         duration = float(request.form['duration'])
+        speed = float(request.form.get('speed', 1))
+        print(speed)
         caption = request.form.get('caption', '')
-        gif_name = create_gif_from_youtube(video_id, start, duration, caption, font, color)
+        gif_name = create_gif_from_youtube(video_id, start, duration, speed, caption, font, color)
         return gif_name
     except:
         return "Doesn't look like anything to me."

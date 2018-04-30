@@ -29,7 +29,7 @@ def mkdir_if_not_exists(dirlist):
             os.makedirs(dirname)
 
 
-def create_gif_from_youtube(videoid, start, duration, caption, font, color):
+def create_gif_from_youtube(videoid, start, duration, speed, caption, font, color):
     # Check if we have already downloaded the video
     mkdir_if_not_exists([VIDEO_DIRNAME, TMP_DIRNAME, GIF_DIRNAME])
 
@@ -59,8 +59,8 @@ def create_gif_from_youtube(videoid, start, duration, caption, font, color):
     ))
     init_gif_fname = '{}_{}_{}.gif'.format(videoid.lower(), start, duration)
     init_gif_path = os.path.join(TMP_DIRNAME, init_gif_fname)
-    os.system('ffmpeg -y -ss {} -t {} -i {} -i {} -filter_complex "fps={}, scale={}:-1:flags=lanczos[x];[x][1:v]paletteuse" {}'.format(
-        start, duration, video_path, pallete_path, fps, vertical_res, init_gif_path
+    os.system('ffmpeg -y -ss {} -t {} -i {} -i {} -filter_complex "[0:v]setpts={}*PTS[i];[i]fps={}, scale={}:-1:flags=lanczos[x];[x][1:v]paletteuse" {}'.format(
+        start, duration, video_path, pallete_path, 1.0 / speed, fps, vertical_res, init_gif_path
     ))
 
     final_gif_name = '{}_{}_{}.gif'.format(videoid.lower(), start, duration)
@@ -70,8 +70,8 @@ def create_gif_from_youtube(videoid, start, duration, caption, font, color):
     return final_gif_name
 
 if __name__ == '__main__':
-    fontpath = 'Futura.ttc'
+    fontpath = 'Impact.ttf'
     font = ImageFont.truetype(fontpath, 24)
     #create_gif_from_youtube('IuS5huqOND4', 116, 3.2, "I wouldn't say that at all.", font, (255, 255, 255))
     #create_gif_from_youtube('sjVqDg32_8s', 106, 1, "", font, (255, 255, 255))
-    create_gif_from_youtube('sjVqDg32_8s', 84.08, 2, "There is beauty in what we are.", font, (255, 255, 255))
+    create_gif_from_youtube('sjVqDg32_8s', 84.08, 2, 0.25, "There is beauty in what we are.", font, (255, 255, 255))
