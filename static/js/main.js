@@ -40,6 +40,7 @@ function onPlayerStateChange(event) {
                         + r.toString() + "x"
                         + "</option>")
                 ));
+                $('#loading-spinner').hide();
                 if(currentPlayCallback) {
                     currentPlayCallback();
                     currentPlayCallback = undefined;
@@ -96,6 +97,13 @@ function onYouTubeIframeAPIReady() {
             onReady: () => {
                 youtubePlayer.mute();
                 pollCurrentTime();
+                $('#caption-preview').width($('#youtube-player-wrapper').width());
+                $('#caption-preview').height($('#youtube-player-wrapper').height());
+
+                $('#loading-spinner').width($('#youtube-player-wrapper').width());
+                $('#loading-spinner').height($('#youtube-player-wrapper').height() + 10);
+
+                $('#loading-spinner').hide();
             },
             onStateChange: onPlayerStateChange
         },
@@ -117,6 +125,7 @@ var loadVideo = (videoId, videoTitle, cb=undefined) => {
         'suggestedQuality': 'large',
         'endSeconds': 0
     });
+    $('#loading-spinner').show();
     currentVideoId = videoId;
     currentVideoTitle = videoTitle;
     updateVideoMetadata = true;
@@ -277,19 +286,19 @@ $(document).ready(() => {
 
     $('#video-duration').change(() => {
         //currentStart = parseFloat($('#video-slider').val());
-        currentDuration = parseFloat($('#video-duration').val());
+        currentDuration = parseFloat($('#video-duration').val()).toFixed(2);
         updateTimeInputs(currentStart, currenStart + currentDuration, currentSpeed);
     });
 
     $('#duration-plus').click(() => {
-        var currentVal = parseFloat($('#video-duration').val());
+        var currentVal = parseFloat($('#video-duration').val()).toFixed(2);
         currentDuration = currentVal + INCREMENT_VAL;
         //currentStart = parseFloat($('#video-slider').val());
         updateTimeInputs(currentStart, currentStart + currentDuration, currentSpeed);
     });
 
     $('#duration-minus').click(() => {
-        var currentVal = parseFloat($('#video-duration').val());
+        var currentVal = parseFloat($('#video-duration').val()).toFixed(2);
         if(currentVal >= INCREMENT_VAL) {
             currentDuration = currentVal - INCREMENT_VAL;
         } else {
@@ -299,35 +308,35 @@ $(document).ready(() => {
     });
 
     $('#video-start').change(() => {
-        currentStart = parseFloat($('#video-start').val());
+        currentStart = parseFloat($('#video-start').val()).toFixed(2);
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
     });
 
     $('#start-plus').click(() => {
-        var currentVal = parseFloat($('#video-start').val());
+        var currentVal = parseFloat($('#video-start').val()).toFixed(2);
         currentStart = currentVal + INCREMENT_VAL;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
     });
 
     $('#start-minus').click(() => {
-        var currentVal = parseFloat($('#video-start').val());
+        var currentVal = parseFloat($('#video-start').val()).toFixed(2);
         currentStart = (currentVal >= INCREMENT_VAL) ? (currentVal - INCREMENT_VAL) : 0;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
     });
 
     $('#video-end').change(() => {
-        currentEnd = parseFloat($('#video-end').val());
+        currentEnd = parseFloat($('#video-end').val()).toFixed(2);
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
     });
 
     $('#end-plus').click(() => {
-        var currentVal = parseFloat($('#video-end').val());
+        var currentVal = parseFloat($('#video-end').val()).toFixed(2);
         currentEnd = currentVal + INCREMENT_VAL;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
     });
 
     $('#end-minus').click(() => {
-        var currentVal = parseFloat($('#video-end').val());
+        var currentVal = parseFloat($('#video-end').val()).toFixed(2);
         currentEnd = (currentVal > (currentStart + INCREMENT_VAL)) ? (currentVal - INCREMENT_VAL) : currentStart;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
     });
@@ -347,9 +356,6 @@ $(document).ready(() => {
             caption: $('#caption-input').val()
         });
     });
-
-    $('#caption-preview').width($('#caption-preview').parent().width());
-    $('#caption-preview').height($('#caption-preview').parent().height());
 
     $('#caption-input').keyup(() => {
         $('#caption-text').html($('#caption-input').val());

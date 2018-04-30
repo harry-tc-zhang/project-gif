@@ -36,7 +36,14 @@
                     <div id='youtube-player-wrapper' style='width:100%;display:none;position:relative'>
                         <div id="youtube-player"></div>
                     </div>
-                    <div id="caption-preview" style="color:white;position:absolute;top:0px;left:0px">
+                    <div id="loading-spinner" style="display:none; background-color:white; opacity:0.9; position:absolute; top:0px; left:0px">
+                        <div id="spinner-wrapper" class="d-flex align-items-center justify-content-center" style="height:100%; width:100%">
+                            <div class="progress" style="width:200px">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="caption-preview" style="color:white;position:absolute;top:0px;left:0px;pointer-events:none">
                         <span id="caption-text" style="display:block;width:100%;text-align:center;top:350px;position:relative;font-size:24px"></span>
                     </div>
                 </div>
@@ -61,18 +68,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!--<div class="col-sm-4">
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text">Duration</span>
-                                        </div>
-                                        <input class="form-control" id="video-duration" type="text" value="2" />
-                                        <div class="input-group-append">
-                                            <button id="duration-minus" class="btn btn-outline-secondary" type="button" style="width:40px">-</button>
-                                            <button id="duration-plus" class="btn btn-outline-secondary" type="button" style="width:40px">+</button>
-                                        </div>
-                                    </div>
-                                </div>-->
                                 <div class="col-sm-4">
                                     <div class="input-group">
                                         <div class="input-group-prepend">
@@ -138,7 +133,7 @@
 </div>
 
 <div class="modal fade" id="progress-modal">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="progress-title">Generating your GIF...</h5>
