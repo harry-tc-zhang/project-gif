@@ -20,32 +20,38 @@ var currentStart = 0;
 var currentDuration = 3;
 var currentEnd = 0;
 var currentSpeed = 1;
+var restoreVideoSpeed = false;
 
 var currentPlayCallback = undefined;
 
 var INCREMENT_VAL = 0.2;
 
 function onPlayerStateChange(event) {
+    console.log(event);
     if (event.data == 1) {
         if (updateVideoMetadata) {
-            console.log(youtubePlayer.getDuration());
             setTimeout(() => {
+                console.log('Updating metadata');
                 youtubePlayer.stopVideo();
-                console.log(youtubePlayer.getAvailablePlaybackRates());
                 updateVideoMetadata = false;
                 // Sets the playback rate dropdown
                 let rates = youtubePlayer.getAvailablePlaybackRates();
+                let prevSpeed = $('#video-speed').val();
                 $('#video-speed').html(rates.map((r) =>
                     ("<option value='" + r.toString() + "' " + ((r == 1) ? "selected" : "") + ">"
                         + r.toString() + "x"
                         + "</option>")
                 ));
+                if (restoreVideoSpeed) {
+                    $('#video-speed').val(prevSpeed);
+                    restoreVideoSpeed = false;
+                }
                 $('#loading-spinner').hide();
                 if(currentPlayCallback) {
                     currentPlayCallback();
                     currentPlayCallback = undefined;
                 }
-            }, 1000);
+            }, 2000);
         }
         else if (snippetPlaying) {
             setTimeout(() => {
@@ -53,10 +59,14 @@ function onPlayerStateChange(event) {
                 snippetPlaying = false;
             }, playSecs / currentSpeed * 1000);
         } else {
-            youtubePlayer.setPlaybackRate(1);
+            currentSpeed = 1;
+            $('#video-speed').val(currentSpeed);
+            youtubePlayer.setPlaybackRate(currentSpeed);
         }
-    } else if(event.data == 2) {
-        console.log(youtubePlayer.getCurrentTime());
+    } else if (event.data == -1) {
+        if(updateVideoMetadata) {
+            youtubePlayer.playVideo();
+        }
     }
 }
 
@@ -79,6 +89,7 @@ var pollCurrentTime = () => {
                 currentStart = 0;
             }
             currentEnd = currentSecs;
+            revertControlStyle(false);
             $('#video-start').val(currentStart.toFixed(2).toString() + "s");
             $('#video-duration').val(currentDuration.toFixed(2).toString() + "s");
             $('#video-end').val(currentEnd.toFixed(2).toString() + "s");
@@ -120,16 +131,28 @@ var currentVideoId = '';
 var currentVideoTitle = '';
 
 var loadVideo = (videoId, videoTitle, cb=undefined) => {
-    youtubePlayer.loadVideoById({
-        'videoId': videoId,
-        'suggestedQuality': 'large',
-        'endSeconds': 0
-    });
+    console.log('loadVideo() called');
+    updateVideoMetadata = true;
     $('#loading-spinner').show();
     currentVideoId = videoId;
     currentVideoTitle = videoTitle;
-    updateVideoMetadata = true;
     currentPlayCallback = cb;
+    youtubePlayer.loadVideoById({
+        'videoId': videoId,
+        'suggestedQuality': 'large',
+        'endSeconds': 3
+    });
+    //youtubePlayer.playVideo();
+}
+
+var revertControlStyle = (isSaved) => {
+    if(isSaved) {
+        $('#control-card').addClass('border-success');
+        $('#control-card').find('.card-header').text('Saved snippet');
+    } else {
+        $('#control-card').removeClass('border-success');
+        $('#control-card').find('.card-header').text('You were just watching...');
+    }
 }
 
 var playSavedSnippet = (snippet) => {
@@ -137,9 +160,12 @@ var playSavedSnippet = (snippet) => {
     currentDuration = snippet.duration;
     currentEnd = snippet.start + snippet.duration;
     currentSpeed = snippet.speed;
+    restoreVideoSpeed = true;
     updateTimeInputs(snippet.start, snippet.start + snippet.duration, snippet.speed);
     $('#caption-input').val(snippet.caption);
     $('#caption-text').text(snippet.caption);
+    //console.log('data restore complete');
+    revertControlStyle(true);
     playVideoSegment(snippet.videoId, snippet.title, snippet.start, snippet.duration, snippet.speed);
 }
 
@@ -166,7 +192,6 @@ var searchAction = () => {
         });
 
         var bookmarkTopOffet = $('#bookmark-section')[0].getBoundingClientRect().top;
-        console.log(bookmarkTopOffet);
         $('#bookmark-section').height($(window).height() - bookmarkTopOffet);
 
         var searchResultTopOffset = $('#search-results')[0].getBoundingClientRect().top;
@@ -216,6 +241,7 @@ var APILoaded = () => {
 
 var saveSnippet = (snippetInfo) => {
     savedSnippets.push(snippetInfo);
+    console.log(savedSnippets);
     $('#bookmark-section').html(bookmarkTableTemplate(savedSnippets))
     $('a.bookmark-play').click((event) => {
         var idx = parseInt($(event.target).parent().attr('forItemIdx'));
@@ -227,7 +253,6 @@ var downloadGIFFromURL = (gifurl) => {
     var linktag = document.createElement('a');
     linktag.setAttribute('href', gifurl);
     linktag.setAttribute('download', "YourGIF.gif");
-    console.log(linktag);
     linktag.click();
     setTimeout(() => {linktag.remove()}, 500);
 }
@@ -235,6 +260,10 @@ var downloadGIFFromURL = (gifurl) => {
 $(document).ready(() => {
     searchResultTemplate = Handlebars.compile($('#search-result-template').html());
     bookmarkTableTemplate = Handlebars.compile($('#bookmark-table-template').html());
+
+    Handlebars.registerHelper('roundTo2', (val) => {
+       return parseFloat(val).toFixed(2).toString();
+    });
 
     gapi.load('client', APILoaded);
 
@@ -286,64 +315,74 @@ $(document).ready(() => {
 
     $('#video-duration').change(() => {
         //currentStart = parseFloat($('#video-slider').val());
-        currentDuration = parseFloat($('#video-duration').val()).toFixed(2);
+        currentDuration = parseFloat($('#video-duration').val());
         updateTimeInputs(currentStart, currenStart + currentDuration, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#duration-plus').click(() => {
-        var currentVal = parseFloat($('#video-duration').val()).toFixed(2);
+        var currentVal = parseFloat($('#video-duration').val());
         currentDuration = currentVal + INCREMENT_VAL;
         //currentStart = parseFloat($('#video-slider').val());
         updateTimeInputs(currentStart, currentStart + currentDuration, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#duration-minus').click(() => {
-        var currentVal = parseFloat($('#video-duration').val()).toFixed(2);
+        var currentVal = parseFloat($('#video-duration').val());
         if(currentVal >= INCREMENT_VAL) {
             currentDuration = currentVal - INCREMENT_VAL;
         } else {
             currentDuration = 0;
         }
         updateTimeInputs(currentStart, currentStart + currentDuration, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#video-start').change(() => {
-        currentStart = parseFloat($('#video-start').val()).toFixed(2);
+        currentStart = parseFloat($('#video-start').val());
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#start-plus').click(() => {
-        var currentVal = parseFloat($('#video-start').val()).toFixed(2);
+        var currentVal = parseFloat($('#video-start').val());
         currentStart = currentVal + INCREMENT_VAL;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#start-minus').click(() => {
-        var currentVal = parseFloat($('#video-start').val()).toFixed(2);
+        var currentVal = parseFloat($('#video-start').val());
         currentStart = (currentVal >= INCREMENT_VAL) ? (currentVal - INCREMENT_VAL) : 0;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#video-end').change(() => {
-        currentEnd = parseFloat($('#video-end').val()).toFixed(2);
+        currentEnd = parseFloat($('#video-end').val());
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#end-plus').click(() => {
-        var currentVal = parseFloat($('#video-end').val()).toFixed(2);
+        var currentVal = parseFloat($('#video-end').val());
         currentEnd = currentVal + INCREMENT_VAL;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#end-minus').click(() => {
-        var currentVal = parseFloat($('#video-end').val()).toFixed(2);
+        var currentVal = parseFloat($('#video-end').val());
         currentEnd = (currentVal > (currentStart + INCREMENT_VAL)) ? (currentVal - INCREMENT_VAL) : currentStart;
         updateTimeInputs(currentStart, currentEnd, currentSpeed);
+        revertControlStyle(false);
     });
 
     $('#video-speed').change(() => {
        currentSpeed = parseFloat($('#video-speed').val());
        updateTimeInputs(currentStart, currentEnd, currentSpeed);
+       revertControlStyle(false);
     });
 
     $('#bookmark-btn').click(() => {
@@ -352,9 +391,11 @@ $(document).ready(() => {
             videoId: currentVideoId,
             start: currentStart,
             duration: currentDuration,
+            end: currentStart + currentDuration,
             speed: currentSpeed,
             caption: $('#caption-input').val()
         });
+        revertControlStyle(true);
     });
 
     $('#caption-input').keyup(() => {

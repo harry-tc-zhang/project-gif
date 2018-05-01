@@ -23,7 +23,7 @@
                 <input id='search-input' type="text" class="form-control"
                        placeholder="What do you want to immortalize today?" />
                 <div class="input-group-append">
-                    <button id='search-button' class="btn btn-outline-secondary" type="button">Search</button>
+                    <button id='search-button' class="btn btn-primary" type="button">Search</button>
                 </div>
             </div>
         </div>
@@ -49,9 +49,9 @@
                 </div>
             </div>
             <div class="row" id="control-group" style="display:none">
-                <div class="card">
+                <div class="card" id="control-card">
                     <div class="card-header">
-                        Just before you paused
+                        You were just watching...
                     </div>
                     <div class="card-body" style="padding-bottom: 0px">
                         <div class="form-group">
@@ -117,7 +117,7 @@
                         </div>
                     </div>
                 </div>
-                <div>
+                <div style="width:100%">
                     <div class="row" style="margin-top:15px">
                         <div class="col-sm-12" id="bookmark-section" style="overflow-y:scroll">
                         </div>
@@ -182,22 +182,26 @@
 </script>
 
 <script id="bookmark-table-template" type="text/x-handlebars-template">
-<table class="table">
-    <tr>
-        <th>Video</th>
-        <th>From</th>
-        <th>To</th>
-        <th></th>
-    </tr>
-    {{#each this}}
-    <tr>
-        <td>{{title}}</td>
-        <td>{{start}}s</td>
-        <td>{{duration}}s</td>
-        <td><a class="bookmark-play" href="#" forItemIdx="{{@index}}"><span class="oi oi-media-play" title="media-play" aria-hidden="true"></span></a></td>
-    </tr>
-    {{/each}}
-</table>
+<div class="card border-success">
+    <div class="card-body">
+        <table class="table">
+            <tr>
+                <th>Video</th>
+                <th>From</th>
+                <th>To</th>
+                <th></th>
+            </tr>
+            {{#each this}}
+            <tr>
+                <td>{{title}}</td>
+                <td>{{roundTo2 start}}s</td>
+                <td>{{roundTo2 end}}s</td>
+                <td><a class="bookmark-play" href="#" forItemIdx="{{@index}}"><span class="oi oi-media-play" title="media-play" aria-hidden="true"></span></a></td>
+            </tr>
+            {{/each}}
+        </table>
+    </div>
+</div>
 </script>
 {% endraw %}
 
@@ -206,5 +210,15 @@
 var api_key = '{{ ctx.api_key }}';
 </script>
 <script src="static/js/main.js"></script>
+<style>
+#caption-text {
+    font-family: Impact;
+    src: url("../fonts/Impact.ttf");
+}
+
+.youtube-card {
+    cursor: pointer;
+}
+</style>
 </body>
 </html>
